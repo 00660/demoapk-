@@ -3,6 +3,7 @@ package com.codex.lanremote.control
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.os.Build
 import com.codex.lanremote.accessibility.RemoteAccessibilityService
 import com.codex.lanremote.server.MiniWebServer
 import com.codex.lanremote.util.NetworkUtils
@@ -114,7 +115,15 @@ object ControlCenter {
 
     fun appsJson(context: Context): JSONObject {
         val launchIntent = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER)
-        val list = context.packageManager.queryIntentActivities(launchIntent, PackageManager.MATCH_ALL)
+        val list = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            context.packageManager.queryIntentActivities(
+                launchIntent,
+                PackageManager.ResolveInfoFlags.of(PackageManager.MATCH_ALL.toLong()),
+            )
+        } else {
+            @Suppress("DEPRECATION")
+            context.packageManager.queryIntentActivities(launchIntent, PackageManager.MATCH_ALL)
+        }
             .sortedBy { it.loadLabel(context.packageManager).toString().lowercase() }
         val array = JSONArray()
         list.forEach { resolveInfo ->
