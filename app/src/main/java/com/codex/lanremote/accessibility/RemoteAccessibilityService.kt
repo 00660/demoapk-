@@ -260,13 +260,29 @@ class RemoteAccessibilityService : AccessibilityService() {
 
         val root = rootInActiveWindow ?: return
         val packageName = root.packageName?.toString().orEmpty()
-        if (!packageName.contains("systemui", ignoreCase = true) && packageName != "android") {
+        if (
+            !packageName.contains("systemui", ignoreCase = true) &&
+            !packageName.contains("miui", ignoreCase = true) &&
+            !packageName.contains("securitycenter", ignoreCase = true) &&
+            packageName != "android"
+        ) {
             return
         }
 
         val node = findNodeByTexts(
             root,
-            listOf("立即开始", "开始", "允许", "Start now", "Allow"),
+            listOf(
+                "立即开始",
+                "现在开始",
+                "开始",
+                "允许",
+                "同意",
+                "继续",
+                "开始录制",
+                "Start now",
+                "Allow",
+                "Continue",
+            ),
         ) ?: return
 
         val clickable = findClickableAncestor(node) ?: node
