@@ -25,10 +25,19 @@ object WebUiRenderer {
                   align-items: center;
                   justify-content: center;
                 }
+                #stage {
+                  position: fixed;
+                  inset: 0;
+                  display: flex;
+                  align-items: center;
+                  justify-content: center;
+                  background: #000;
+                }
                 #screen {
-                  width: 100vw;
-                  height: 100vh;
-                  object-fit: contain;
+                  width: auto;
+                  height: auto;
+                  max-width: 100vw;
+                  max-height: 100vh;
                   background: #000;
                   user-select: none;
                   -webkit-user-drag: none;
@@ -48,7 +57,9 @@ object WebUiRenderer {
               </style>
             </head>
             <body>
-              <img id="screen" alt="实时屏幕">
+              <div id="stage">
+                <img id="screen" alt="实时屏幕">
+              </div>
               <div id="tip">正在连接实时屏幕...</div>
               <script>
                 const screen = document.getElementById('screen');
@@ -80,23 +91,43 @@ object WebUiRenderer {
                   screen.src = '/screen.jpg?ts=' + Date.now();
                 }
 
+                function fitScreen() {
+                  if (!screen.naturalWidth || !screen.naturalHeight) {
+                    return;
+                  }
+                  const viewportRatio = window.innerWidth / window.innerHeight;
+                  const imageRatio = screen.naturalWidth / screen.naturalHeight;
+                  if (imageRatio > viewportRatio) {
+                    screen.style.width = '100vw';
+                    screen.style.height = 'auto';
+                  } else {
+                    screen.style.width = 'auto';
+                    screen.style.height = '100vh';
+                  }
+                }
+
                 async function loop() {
                   try {
                     const status = await getStatus();
                     if (status.projectionActive) {
-                      tip.textContent = '';
+                      tip.style.display = 'none';
                     } else if (status.projectionAwaitingApproval) {
+                      tip.style.display = 'block';
                       tip.textContent = '等待系统录屏授权通过...';
                     } else {
+                      tip.style.display = 'block';
                       tip.textContent = '正在发起录屏授权...';
                     }
                     await requestProjectionIfNeeded(status);
                     await refreshScreen();
                   } catch (e) {
+                    tip.style.display = 'block';
                     tip.textContent = '实时屏幕连接失败';
                   }
                 }
 
+                screen.addEventListener('load', fitScreen);
+                window.addEventListener('resize', fitScreen);
                 setInterval(loop, 350);
                 loop();
               </script>
