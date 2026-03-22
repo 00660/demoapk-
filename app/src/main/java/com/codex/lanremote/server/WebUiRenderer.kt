@@ -122,16 +122,16 @@ object WebUiRenderer {
                     div.className = 'node';
 
                     const title = document.createElement('div');
-                    title.textContent = `${node.path} | ${node.className} | ${node.text || node.contentDescription || '(no text)'}`;
+                    title.textContent = `${'$'}{node.path} | ${'$'}{node.className} | ${'$'}{node.text || node.contentDescription || '(no text)'}`;
                     div.appendChild(title);
 
                     const meta = document.createElement('div');
-                    meta.textContent = `bounds=${node.bounds} clickable=${node.clickable} editable=${node.editable}`;
+                    meta.textContent = `bounds=${'$'}{node.bounds} clickable=${'$'}{node.clickable} editable=${'$'}{node.editable}`;
                     div.appendChild(meta);
 
                     const button = document.createElement('button');
                     button.textContent = 'Click Node';
-                    button.onclick = () => call(`/node/click?path=${encodeURIComponent(node.path)}`);
+                    button.onclick = () => call(`/node/click?path=${'$'}{encodeURIComponent(node.path)}`);
                     div.appendChild(button);
 
                     container.appendChild(div);
@@ -144,13 +144,13 @@ object WebUiRenderer {
                 }
 
                 function action(name) {
-                  return call(`/action?name=${encodeURIComponent(name)}`);
+                  return call(`/action?name=${'$'}{encodeURIComponent(name)}`);
                 }
 
                 function tap() {
                   const x = document.getElementById('tapX').value;
                   const y = document.getElementById('tapY').value;
-                  return call(`/gesture/tap?x=${encodeURIComponent(x)}&y=${encodeURIComponent(y)}`);
+                  return call(`/gesture/tap?x=${'$'}{encodeURIComponent(x)}&y=${'$'}{encodeURIComponent(y)}`);
                 }
 
                 function swipe() {
@@ -159,17 +159,17 @@ object WebUiRenderer {
                   const x2 = document.getElementById('x2').value;
                   const y2 = document.getElementById('y2').value;
                   const duration = document.getElementById('duration').value;
-                  return call(`/gesture/swipe?x1=${encodeURIComponent(x1)}&y1=${encodeURIComponent(y1)}&x2=${encodeURIComponent(x2)}&y2=${encodeURIComponent(y2)}&duration=${encodeURIComponent(duration)}`);
+                  return call(`/gesture/swipe?x1=${'$'}{encodeURIComponent(x1)}&y1=${'$'}{encodeURIComponent(y1)}&x2=${'$'}{encodeURIComponent(x2)}&y2=${'$'}{encodeURIComponent(y2)}&duration=${'$'}{encodeURIComponent(duration)}`);
                 }
 
                 function setText() {
                   const value = document.getElementById('textValue').value;
-                  return call(`/text?value=${encodeURIComponent(value)}`);
+                  return call(`/text?value=${'$'}{encodeURIComponent(value)}`);
                 }
 
                 function launchPackage() {
                   const packageName = document.getElementById('packageName').value;
-                  return call(`/launch?package=${encodeURIComponent(packageName)}`);
+                  return call(`/launch?package=${'$'}{encodeURIComponent(packageName)}`);
                 }
 
                 refreshAll();
