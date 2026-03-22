@@ -1,15 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">LAN Remote Control</string>
-    <string name="accessibility_service_label">LAN Remote Accessibility</string>
-    <string name="accessibility_service_description">Lets a local web page control taps, swipes, text input, and navigation through Android accessibility APIs.</string>
-    <string name="open_accessibility_settings">Open Accessibility Settings</string>
-    <string name="open_wifi_settings">Open Wi-Fi Settings</string>
-    <string name="open_battery_settings">Open Battery Optimization Settings</string>
-    <string name="start_server">Start Web Service</string>
-    <string name="stop_server">Stop Web Service</string>
-    <string name="open_browser">Open Browser</string>
-    <string name="refresh_status">Refresh Status</string>
-    <string name="notification_title">LAN Remote Control</string>
-    <string name="notification_channel_name">LAN Remote Control</string>
+    <string name="app_name">局域网远程控制</string>
+    <string name="accessibility_service_label">局域网远控辅助服务</string>
+    <string name="accessibility_service_description">允许局域网页面通过安卓辅助功能执行点击、滑动、输入和实时画面截图。</string>
+    <string name="open_accessibility_settings">打开辅助功能设置</string>
+    <string name="open_wifi_settings">打开无线网络设置</string>
+    <string name="open_battery_settings">打开电池优化设置</string>
+    <string name="start_server">启动网页服务</string>
+    <string name="stop_server">停止网页服务</string>
+    <string name="open_browser">打开浏览器</string>
+    <string name="refresh_status">刷新状态</string>
+    <string name="notification_title">局域网远程控制</string>
+    <string name="notification_channel_name">局域网远程控制</string>
 </resources>

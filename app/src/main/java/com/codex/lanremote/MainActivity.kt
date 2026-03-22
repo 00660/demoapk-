@@ -56,25 +56,29 @@ class MainActivity : AppCompatActivity() {
     private fun renderStatus() {
         val status = ControlCenter.status(this)
         binding.statusText.text = buildString {
-            appendLine("Accessibility connected: ${status.optBoolean("accessibilityConnected")}")
-            appendLine("Server running: ${status.optBoolean("serverRunning")}")
-            appendLine("Base URL: ${status.optString("baseUrl")}")
-            appendLine("Current package: ${status.optString("lastPackage")}")
-            appendLine("Current class: ${status.optString("lastClass")}")
-            appendLine("Visible nodes: ${status.optInt("nodeCount")}")
+            appendLine("辅助功能已连接：${status.optBoolean("accessibilityConnected")}")
+            appendLine("网页服务运行中：${status.optBoolean("serverRunning")}")
+            appendLine("访问地址：${status.optString("baseUrl")}")
+            appendLine("当前包名：${status.optString("lastPackage")}")
+            appendLine("当前类名：${status.optString("lastClass")}")
+            appendLine("可见控件数：${status.optInt("nodeCount")}")
+            appendLine("支持实时画面：${status.optBoolean("screenSupported")}")
+            appendLine("最近画面尺寸：${status.optInt("screenWidth")} x ${status.optInt("screenHeight")}")
         }
 
         binding.instructionsText.text = buildString {
-            appendLine("1. Enable the accessibility service once.")
-            appendLine("2. Start the web service.")
-            appendLine("3. Open the LAN URL from another device.")
+            appendLine("1. 先启用一次辅助功能服务。")
+            appendLine("2. 再启动网页服务。")
+            appendLine("3. 用另一台设备打开上面的局域网地址。")
             appendLine()
-            appendLine("Web UI actions:")
-            appendLine("- Home / Back / Recents")
-            appendLine("- Tap and swipe by coordinates")
-            appendLine("- Text input")
-            appendLine("- Launch installed apps")
-            appendLine("- Browse and click current accessibility nodes")
+            appendLine("网页功能：")
+            appendLine("- 实时画面预览")
+            appendLine("- 点击画面直接点屏")
+            appendLine("- 返回、主页、最近任务")
+            appendLine("- 坐标点击与滑动")
+            appendLine("- 文字输入")
+            appendLine("- 启动应用")
+            appendLine("- 浏览并点击当前控件树")
         }
     }
 }

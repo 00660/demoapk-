@@ -32,6 +32,9 @@ object ControlCenter {
     @Volatile
     private var lastEvent: String = ""
 
+    @Volatile
+    private var lastScreenFrame: ScreenFrame? = null
+
     fun bindAccessibility(service: RemoteAccessibilityService) {
         accessibilityRef = WeakReference(service)
     }
@@ -56,25 +59,25 @@ object ControlCenter {
     fun startServer(context: Context, port: Int = DEFAULT_PORT): ControlResult {
         synchronized(lock) {
             if (webServer != null) {
-                return ControlResult.success("Server already running", mapOf("baseUrl" to baseUrl(context)))
+                return ControlResult.success("网页服务已经在运行", mapOf("baseUrl" to baseUrl(context)))
             }
             return try {
                 val server = MiniWebServer(context.applicationContext, port)
                 server.start(MiniWebServer.READ_TIMEOUT_MS, false)
                 webServer = server
-                ControlResult.success("Server started", mapOf("baseUrl" to baseUrl(context)))
+                ControlResult.success("网页服务启动成功", mapOf("baseUrl" to baseUrl(context)))
             } catch (exc: IOException) {
-                ControlResult.failure("Failed to start server: ${exc.message}")
+                ControlResult.failure("网页服务启动失败：${exc.message}")
             }
         }
     }
 
     fun stopServer(): ControlResult {
         synchronized(lock) {
-            val server = webServer ?: return ControlResult.success("Server already stopped")
+            val server = webServer ?: return ControlResult.success("网页服务已经停止")
             server.stop()
             webServer = null
-            return ControlResult.success("Server stopped")
+            return ControlResult.success("网页服务已停止")
         }
     }
 
@@ -85,6 +88,7 @@ object ControlCenter {
 
     fun status(context: Context): JSONObject {
         val nodes = accessibilityRef?.get()?.dumpNodes().orEmpty()
+        val frame = lastScreenFrame
         return JSONObject().apply {
             put("serverRunning", isServerRunning())
             put("accessibilityConnected", isAccessibilityConnected())
@@ -93,6 +97,11 @@ object ControlCenter {
             put("lastClass", lastClass)
             put("lastEvent", lastEvent)
             put("nodeCount", nodes.size)
+            put("screenSupported", Build.VERSION.SDK_INT >= Build.VERSION_CODES.R)
+            put("screenReady", frame != null)
+            put("screenWidth", frame?.width ?: 0)
+            put("screenHeight", frame?.height ?: 0)
+            put("screenTimestampMs", frame?.timestampMs ?: 0L)
         }
     }
 
@@ -101,7 +110,7 @@ object ControlCenter {
         if (service == null) {
             return JSONObject()
                 .put("success", false)
-                .put("message", "Accessibility service is not connected")
+                .put("message", "辅助功能服务尚未连接")
                 .put("nodes", JSONArray())
         }
         val nodes = service.dumpNodes()
@@ -142,40 +151,50 @@ object ControlCenter {
     }
 
     fun performGlobalAction(name: String): ControlResult {
-        val service = accessibilityRef?.get() ?: return ControlResult.failure("Accessibility service is not connected")
+        val service = accessibilityRef?.get() ?: return ControlResult.failure("辅助功能服务尚未连接")
         return service.performGlobalActionByName(name)
     }
 
     fun tap(x: Int, y: Int): ControlResult {
-        val service = accessibilityRef?.get() ?: return ControlResult.failure("Accessibility service is not connected")
+        val service = accessibilityRef?.get() ?: return ControlResult.failure("辅助功能服务尚未连接")
         return service.tap(x, y)
     }
 
     fun swipe(x1: Int, y1: Int, x2: Int, y2: Int, durationMs: Long): ControlResult {
-        val service = accessibilityRef?.get() ?: return ControlResult.failure("Accessibility service is not connected")
+        val service = accessibilityRef?.get() ?: return ControlResult.failure("辅助功能服务尚未连接")
         return service.swipe(x1, y1, x2, y2, durationMs)
     }
 
     fun setText(value: String): ControlResult {
-        val service = accessibilityRef?.get() ?: return ControlResult.failure("Accessibility service is not connected")
+        val service = accessibilityRef?.get() ?: return ControlResult.failure("辅助功能服务尚未连接")
         return service.setText(value)
     }
 
     fun clickNode(path: String): ControlResult {
-        val service = accessibilityRef?.get() ?: return ControlResult.failure("Accessibility service is not connected")
+        val service = accessibilityRef?.get() ?: return ControlResult.failure("辅助功能服务尚未连接")
         return service.clickNodeByPath(path)
     }
 
     fun launchPackage(context: Context, packageName: String): ControlResult {
         val intent = context.packageManager.getLaunchIntentForPackage(packageName)
-            ?: return ControlResult.failure("No launcher activity for package: $packageName")
+            ?: return ControlResult.failure("没有找到可启动的应用：$packageName")
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         return try {
             context.startActivity(intent)
-            ControlResult.success("Launch intent sent", mapOf("packageName" to packageName))
+            ControlResult.success("应用启动指令已发送", mapOf("packageName" to packageName))
         } catch (exc: Exception) {
-            ControlResult.failure("Failed to launch package: ${exc.message}")
+            ControlResult.failure("启动应用失败：${exc.message}")
         }
+    }
+
+    fun captureScreenFrame(forceRefresh: Boolean = true): ScreenFrame? {
+        val service = accessibilityRef?.get() ?: return null
+        if (!forceRefresh) {
+            return lastScreenFrame
+        }
+        val frame = service.captureScreenFrame() ?: return lastScreenFrame
+        lastScreenFrame = frame
+        return frame
     }
 }
 
@@ -227,3 +246,11 @@ data class UiNodeSnapshot(
             .put("bounds", bounds)
     }
 }
+
+data class ScreenFrame(
+    val bytes: ByteArray,
+    val mimeType: String,
+    val width: Int,
+    val height: Int,
+    val timestampMs: Long,
+)

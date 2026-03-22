@@ -20,13 +20,13 @@ class WebControlService : Service() {
     override fun onCreate() {
         super.onCreate()
         createNotificationChannel()
-        startForeground(NOTIFICATION_ID, buildNotification("Starting LAN web control..."))
+        startForeground(NOTIFICATION_ID, buildNotification("正在启动网页远程控制服务..."))
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         val result = ControlCenter.startServer(applicationContext)
         val text = if (result.success) {
-            "Ready at ${ControlCenter.baseUrl(applicationContext)}"
+            "服务已就绪：${ControlCenter.baseUrl(applicationContext)}"
         } else {
             result.message
         }

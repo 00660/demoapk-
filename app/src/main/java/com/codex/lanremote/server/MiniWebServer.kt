@@ -4,6 +4,7 @@ import android.content.Context
 import com.codex.lanremote.control.ControlCenter
 import fi.iki.elonen.NanoHTTPD
 import org.json.JSONObject
+import java.io.ByteArrayInputStream
 
 class MiniWebServer(
     private val appContext: Context,
@@ -25,6 +26,7 @@ class MiniWebServer(
                 "/status" -> jsonResponse(ControlCenter.status(appContext))
                 "/nodes" -> jsonResponse(ControlCenter.nodeTreeJson())
                 "/apps" -> jsonResponse(ControlCenter.appsJson(appContext))
+                "/screen.jpg" -> imageResponse()
                 "/action" -> jsonResponse(ControlCenter.performGlobalAction(params["name"].orEmpty()).toJson())
                 "/gesture/tap" -> jsonResponse(
                     ControlCenter.tap(
@@ -49,7 +51,7 @@ class MiniWebServer(
                 else -> jsonResponse(
                     JSONObject()
                         .put("success", false)
-                        .put("message", "Not found: ${session.uri}"),
+                        .put("message", "没有这个接口：${session.uri}"),
                     status = Response.Status.NOT_FOUND,
                 )
             }
@@ -78,6 +80,24 @@ class MiniWebServer(
 
     private fun htmlResponse(html: String): Response {
         return newFixedLengthResponse(Response.Status.OK, "text/html; charset=utf-8", html).apply {
+            addHeader("Cache-Control", "no-store")
+        }
+    }
+
+    private fun imageResponse(): Response {
+        val frame = ControlCenter.captureScreenFrame(forceRefresh = true)
+            ?: return newFixedLengthResponse(
+                Response.Status.SERVICE_UNAVAILABLE,
+                "text/plain; charset=utf-8",
+                "当前设备暂不支持实时截图，或辅助服务还没有准备好。",
+            )
+
+        return newFixedLengthResponse(
+            Response.Status.OK,
+            frame.mimeType,
+            ByteArrayInputStream(frame.bytes),
+            frame.bytes.size.toLong(),
+        ).apply {
             addHeader("Cache-Control", "no-store")
         }
     }
