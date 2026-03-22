@@ -10,6 +10,10 @@ class MiniWebServer(
     port: Int,
 ) : NanoHTTPD("0.0.0.0", port) {
 
+    companion object {
+        const val READ_TIMEOUT_MS: Int = 5_000
+    }
+
     override fun serve(session: IHTTPSession): Response {
         return try {
             if (session.method == Method.POST) {

@@ -60,7 +60,7 @@ object ControlCenter {
             }
             return try {
                 val server = MiniWebServer(context.applicationContext, port)
-                server.start(MiniWebServer.SOCKET_READ_TIMEOUT, false)
+                server.start(MiniWebServer.READ_TIMEOUT_MS, false)
                 webServer = server
                 ControlResult.success("Server started", mapOf("baseUrl" to baseUrl(context)))
             } catch (exc: IOException) {
