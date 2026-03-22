@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">LAN Remote Control</string>
+    <string name="accessibility_service_label">LAN Remote Accessibility</string>
+    <string name="accessibility_service_description">Lets a local web page control taps, swipes, text input, and navigation through Android accessibility APIs.</string>
+    <string name="open_accessibility_settings">Open Accessibility Settings</string>
+    <string name="open_wifi_settings">Open Wi-Fi Settings</string>
+    <string name="open_battery_settings">Open Battery Optimization Settings</string>
+    <string name="start_server">Start Web Service</string>
+    <string name="stop_server">Stop Web Service</string>
+    <string name="open_browser">Open Browser</string>
+    <string name="refresh_status">Refresh Status</string>
+    <string name="notification_title">LAN Remote Control</string>
+    <string name="notification_channel_name">LAN Remote Control</string>
+</resources>
