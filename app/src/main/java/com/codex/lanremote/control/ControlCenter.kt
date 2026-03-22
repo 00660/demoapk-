@@ -5,6 +5,7 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import com.codex.lanremote.accessibility.RemoteAccessibilityService
+import com.codex.lanremote.capture.ScreenCaptureManager
 import com.codex.lanremote.server.MiniWebServer
 import com.codex.lanremote.util.NetworkUtils
 import org.json.JSONArray
@@ -88,7 +89,7 @@ object ControlCenter {
 
     fun status(context: Context): JSONObject {
         val nodes = accessibilityRef?.get()?.dumpNodes().orEmpty()
-        val frame = lastScreenFrame
+        val frame = lastScreenFrame ?: ScreenCaptureManager.latestFrame()
         return JSONObject().apply {
             put("serverRunning", isServerRunning())
             put("accessibilityConnected", isAccessibilityConnected())
@@ -97,11 +98,13 @@ object ControlCenter {
             put("lastClass", lastClass)
             put("lastEvent", lastEvent)
             put("nodeCount", nodes.size)
-            put("screenSupported", Build.VERSION.SDK_INT >= Build.VERSION_CODES.R)
+            put("screenSupported", true)
             put("screenReady", frame != null)
             put("screenWidth", frame?.width ?: 0)
             put("screenHeight", frame?.height ?: 0)
             put("screenTimestampMs", frame?.timestampMs ?: 0L)
+            put("projectionActive", ScreenCaptureManager.isProjectionActive())
+            put("projectionAwaitingApproval", ScreenCaptureManager.isAwaitingApproval())
         }
     }
 
@@ -113,6 +116,7 @@ object ControlCenter {
                 .put("message", "辅助功能服务尚未连接")
                 .put("nodes", JSONArray())
         }
+
         val nodes = service.dumpNodes()
         val array = JSONArray()
         nodes.forEach { array.put(it.toJson()) }
@@ -132,8 +136,8 @@ object ControlCenter {
         } else {
             @Suppress("DEPRECATION")
             context.packageManager.queryIntentActivities(launchIntent, PackageManager.MATCH_ALL)
-        }
-            .sortedBy { it.loadLabel(context.packageManager).toString().lowercase() }
+        }.sortedBy { it.loadLabel(context.packageManager).toString().lowercase() }
+
         val array = JSONArray()
         list.forEach { resolveInfo ->
             val activityInfo = resolveInfo.activityInfo ?: return@forEach
@@ -188,13 +192,42 @@ object ControlCenter {
     }
 
     fun captureScreenFrame(forceRefresh: Boolean = true): ScreenFrame? {
-        val service = accessibilityRef?.get() ?: return null
+        val projectionFrame = ScreenCaptureManager.latestFrame()
+        if (projectionFrame != null) {
+            lastScreenFrame = projectionFrame
+            return projectionFrame
+        }
+
+        val service = accessibilityRef?.get() ?: return lastScreenFrame
         if (!forceRefresh) {
             return lastScreenFrame
         }
-        val frame = service.captureScreenFrame() ?: return lastScreenFrame
+
+        val frame = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            service.captureScreenFrame()
+        } else {
+            null
+        } ?: return lastScreenFrame
+
         lastScreenFrame = frame
         return frame
+    }
+
+    fun requestProjectionPermission(context: Context): ControlResult {
+        return try {
+            ScreenCaptureManager.requestPermission(context.applicationContext)
+            ControlResult.success("录屏授权请求已发起")
+        } catch (exc: Exception) {
+            ControlResult.failure("发起录屏授权失败：${exc.message}")
+        }
+    }
+
+    fun clearProjectionApprovalRequest() {
+        ScreenCaptureManager.clearAwaitingApproval()
+    }
+
+    fun isProjectionApprovalRequested(): Boolean {
+        return ScreenCaptureManager.isAwaitingApproval()
     }
 }
 

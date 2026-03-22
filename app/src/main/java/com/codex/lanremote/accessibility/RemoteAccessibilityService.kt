@@ -38,6 +38,7 @@ class RemoteAccessibilityService : AccessibilityService() {
             className = event.className?.toString().orEmpty(),
             eventName = AccessibilityEvent.eventTypeToString(event.eventType),
         )
+        maybeApproveProjectionDialog()
     }
 
     override fun onInterrupt() = Unit
@@ -248,6 +249,45 @@ class RemoteAccessibilityService : AccessibilityService() {
                 return current
             }
             current = current.parent
+        }
+        return null
+    }
+
+    private fun maybeApproveProjectionDialog() {
+        if (!ControlCenter.isProjectionApprovalRequested()) {
+            return
+        }
+
+        val root = rootInActiveWindow ?: return
+        val packageName = root.packageName?.toString().orEmpty()
+        if (!packageName.contains("systemui", ignoreCase = true) && packageName != "android") {
+            return
+        }
+
+        val node = findNodeByTexts(
+            root,
+            listOf("立即开始", "开始", "允许", "Start now", "Allow"),
+        ) ?: return
+
+        val clickable = findClickableAncestor(node) ?: node
+        if (clickable.performAction(AccessibilityNodeInfo.ACTION_CLICK)) {
+            ControlCenter.clearProjectionApprovalRequest()
+        }
+    }
+
+    private fun findNodeByTexts(node: AccessibilityNodeInfo, targets: List<String>): AccessibilityNodeInfo? {
+        val text = node.text?.toString().orEmpty()
+        val desc = node.contentDescription?.toString().orEmpty()
+        if (targets.any { target -> text.contains(target, ignoreCase = true) || desc.contains(target, ignoreCase = true) }) {
+            return node
+        }
+
+        for (index in 0 until node.childCount) {
+            val child = node.getChild(index) ?: continue
+            val result = findNodeByTexts(child, targets)
+            if (result != null) {
+                return result
+            }
         }
         return null
     }

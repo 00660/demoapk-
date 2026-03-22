@@ -38,6 +38,13 @@
             android:text="@string/open_accessibility_settings" />
 
         <Button
+            android:id="@+id/requestProjectionButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="@string/request_projection_permission" />
+
+        <Button
             android:id="@+id/openWifiButton"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

@@ -27,6 +27,7 @@ class MiniWebServer(
                 "/nodes" -> jsonResponse(ControlCenter.nodeTreeJson())
                 "/apps" -> jsonResponse(ControlCenter.appsJson(appContext))
                 "/screen.jpg" -> imageResponse()
+                "/projection/request" -> jsonResponse(ControlCenter.requestProjectionPermission(appContext).toJson())
                 "/action" -> jsonResponse(ControlCenter.performGlobalAction(params["name"].orEmpty()).toJson())
                 "/gesture/tap" -> jsonResponse(
                     ControlCenter.tap(
@@ -34,7 +35,6 @@ class MiniWebServer(
                         y = params["y"]?.toIntOrNull() ?: 0,
                     ).toJson(),
                 )
-
                 "/gesture/swipe" -> jsonResponse(
                     ControlCenter.swipe(
                         x1 = params["x1"]?.toIntOrNull() ?: 0,
@@ -44,7 +44,6 @@ class MiniWebServer(
                         durationMs = params["duration"]?.toLongOrNull() ?: 300L,
                     ).toJson(),
                 )
-
                 "/text" -> jsonResponse(ControlCenter.setText(params["value"].orEmpty()).toJson())
                 "/node/click" -> jsonResponse(ControlCenter.clickNode(params["path"].orEmpty()).toJson())
                 "/launch" -> jsonResponse(ControlCenter.launchPackage(appContext, params["package"].orEmpty()).toJson())
@@ -89,7 +88,7 @@ class MiniWebServer(
             ?: return newFixedLengthResponse(
                 Response.Status.SERVICE_UNAVAILABLE,
                 "text/plain; charset=utf-8",
-                "当前设备暂不支持实时截图，或辅助服务还没有准备好。",
+                "当前还没有屏幕画面，请先发起录屏授权。",
             )
 
         return newFixedLengthResponse(

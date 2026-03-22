@@ -5,6 +5,7 @@ import android.net.Uri
 import android.os.Bundle
 import android.provider.Settings
 import androidx.appcompat.app.AppCompatActivity
+import com.codex.lanremote.capture.ScreenCapturePermissionActivity
 import com.codex.lanremote.control.ControlCenter
 import com.codex.lanremote.databinding.ActivityMainBinding
 import com.codex.lanremote.server.WebControlService
@@ -19,6 +20,10 @@ class MainActivity : AppCompatActivity() {
 
         binding.openAccessibilityButton.setOnClickListener {
             startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
+        }
+
+        binding.requestProjectionButton.setOnClickListener {
+            startActivity(Intent(this, ScreenCapturePermissionActivity::class.java))
         }
 
         binding.openWifiButton.setOnClickListener {
@@ -61,24 +66,19 @@ class MainActivity : AppCompatActivity() {
             appendLine("访问地址：${status.optString("baseUrl")}")
             appendLine("当前包名：${status.optString("lastPackage")}")
             appendLine("当前类名：${status.optString("lastClass")}")
-            appendLine("可见控件数：${status.optInt("nodeCount")}")
-            appendLine("支持实时画面：${status.optBoolean("screenSupported")}")
-            appendLine("最近画面尺寸：${status.optInt("screenWidth")} x ${status.optInt("screenHeight")}")
+            appendLine("控件数量：${status.optInt("nodeCount")}")
+            appendLine("录屏已开启：${status.optBoolean("projectionActive")}")
+            appendLine("等待录屏授权：${status.optBoolean("projectionAwaitingApproval")}")
+            appendLine("实时画面尺寸：${status.optInt("screenWidth")} x ${status.optInt("screenHeight")}")
         }
 
         binding.instructionsText.text = buildString {
-            appendLine("1. 先启用一次辅助功能服务。")
-            appendLine("2. 再启动网页服务。")
-            appendLine("3. 用另一台设备打开上面的局域网地址。")
+            appendLine("1. 先启用辅助功能。")
+            appendLine("2. 再点一次“申请录屏授权”。")
+            appendLine("3. 最后启动网页服务，用别的设备打开上面的局域网地址。")
             appendLine()
-            appendLine("网页功能：")
-            appendLine("- 实时画面预览")
-            appendLine("- 点击画面直接点屏")
-            appendLine("- 返回、主页、最近任务")
-            appendLine("- 坐标点击与滑动")
-            appendLine("- 文字输入")
-            appendLine("- 启动应用")
-            appendLine("- 浏览并点击当前控件树")
+            appendLine("安卓 8.1 的实时屏幕必须走系统录屏授权。")
+            appendLine("如果屏幕坏了，但辅助功能已经启用，系统授权弹窗有机会自动帮你点掉。")
         }
     }
 }

@@ -2,8 +2,9 @@
 <resources>
     <string name="app_name">局域网远程控制</string>
     <string name="accessibility_service_label">局域网远控辅助服务</string>
-    <string name="accessibility_service_description">允许局域网页面通过安卓辅助功能执行点击、滑动、输入和实时画面截图。</string>
+    <string name="accessibility_service_description">允许局域网页面通过安卓辅助功能执行点击、滑动、输入和自动确认录屏授权。</string>
     <string name="open_accessibility_settings">打开辅助功能设置</string>
+    <string name="request_projection_permission">申请录屏授权</string>
     <string name="open_wifi_settings">打开无线网络设置</string>
     <string name="open_battery_settings">打开电池优化设置</string>
     <string name="start_server">启动网页服务</string>
