@@ -6,6 +6,7 @@ on:
     branches:
       - main
       - master
+      - 主要
   pull_request:
 
 jobs:
