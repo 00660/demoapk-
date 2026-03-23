@@ -1,0 +1,12 @@
+services:
+  lan-remote-bridge:
+    build: .
+    container_name: lan-remote-bridge
+    restart: unless-stopped
+    environment:
+      PHONE_HOST: 192.168.2.224
+      PHONE_HTTP_PORT: "8080"
+      PHONE_H264_PORT: "27183"
+      BRIDGE_PORT: "8090"
+    ports:
+      - "8090:8090"
