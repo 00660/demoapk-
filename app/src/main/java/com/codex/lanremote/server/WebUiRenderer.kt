@@ -47,14 +47,13 @@ object WebUiRenderer {
                   overflow: hidden;
                 }
                 #screen {
-                  width: auto;
-                  height: auto;
-                  max-width: 100vw;
-                  max-height: 100vh;
+                  width: 100%;
+                  height: 100%;
                   background: #000;
                   user-select: none;
                   -webkit-user-drag: none;
                   touch-action: none;
+                  object-fit: cover;
                 }
                 #tip {
                   position: fixed;
@@ -138,17 +137,8 @@ object WebUiRenderer {
                   const viewportHeight = Math.max(1, Math.round(viewport.height));
                   stage.style.width = viewportWidth + 'px';
                   stage.style.height = viewportHeight + 'px';
-                  screen.style.maxWidth = viewportWidth + 'px';
-                  screen.style.maxHeight = viewportHeight + 'px';
-                  const viewportRatio = viewportWidth / viewportHeight;
-                  const imageRatio = screen.naturalWidth / screen.naturalHeight;
-                  if (imageRatio > viewportRatio) {
-                    screen.style.width = viewportWidth + 'px';
-                    screen.style.height = 'auto';
-                  } else {
-                    screen.style.width = 'auto';
-                    screen.style.height = viewportHeight + 'px';
-                  }
+                  screen.style.width = viewportWidth + 'px';
+                  screen.style.height = viewportHeight + 'px';
                 }
 
                 async function loop() {
