@@ -64,7 +64,8 @@ object WebUiRenderer {
               <script>
                 const screen = document.getElementById('screen');
                 const tip = document.getElementById('tip');
-                let startedProjectionRequest = false;
+                let lastProjectionRequestAt = 0;
+                let gestureStart = null;
 
                 async function getStatus() {
                   const response = await fetch('/status');
@@ -72,13 +73,14 @@ object WebUiRenderer {
                 }
 
                 async function requestProjectionIfNeeded(status) {
-                  if (startedProjectionRequest) {
-                    return;
-                  }
                   if (status.projectionActive || status.projectionAwaitingApproval) {
                     return;
                   }
-                  startedProjectionRequest = true;
+                  const now = Date.now();
+                  if (now - lastProjectionRequestAt < 3000) {
+                    return;
+                  }
+                  lastProjectionRequestAt = now;
                   try {
                     await fetch('/projection/request', { method: 'POST' });
                     tip.textContent = '正在请求系统录屏授权...';
@@ -89,6 +91,31 @@ object WebUiRenderer {
 
                 async function refreshScreen() {
                   screen.src = '/screen.jpg?ts=' + Date.now();
+                }
+
+                async function sendTap(x, y) {
+                  await fetch('/gesture/tap?x=' + encodeURIComponent(x) + '&y=' + encodeURIComponent(y), { method: 'POST' });
+                }
+
+                async function sendSwipe(x1, y1, x2, y2) {
+                  await fetch(
+                    '/gesture/swipe?x1=' + encodeURIComponent(x1) +
+                    '&y1=' + encodeURIComponent(y1) +
+                    '&x2=' + encodeURIComponent(x2) +
+                    '&y2=' + encodeURIComponent(y2) +
+                    '&duration=220',
+                    { method: 'POST' }
+                  );
+                }
+
+                function mapPoint(clientX, clientY) {
+                  if (!screen.naturalWidth || !screen.naturalHeight) {
+                    return null;
+                  }
+                  const rect = screen.getBoundingClientRect();
+                  const x = Math.round((clientX - rect.left) * screen.naturalWidth / rect.width);
+                  const y = Math.round((clientY - rect.top) * screen.naturalHeight / rect.height);
+                  return { x: x, y: y };
                 }
 
                 function fitScreen() {
@@ -125,6 +152,30 @@ object WebUiRenderer {
                     tip.textContent = '实时屏幕连接失败';
                   }
                 }
+
+                screen.addEventListener('pointerdown', function (event) {
+                  gestureStart = mapPoint(event.clientX, event.clientY);
+                });
+
+                screen.addEventListener('pointerup', async function (event) {
+                  if (!gestureStart) {
+                    return;
+                  }
+                  const endPoint = mapPoint(event.clientX, event.clientY);
+                  if (!endPoint) {
+                    gestureStart = null;
+                    return;
+                  }
+
+                  const dx = Math.abs(endPoint.x - gestureStart.x);
+                  const dy = Math.abs(endPoint.y - gestureStart.y);
+                  if (dx < 16 && dy < 16) {
+                    await sendTap(endPoint.x, endPoint.y);
+                  } else {
+                    await sendSwipe(gestureStart.x, gestureStart.y, endPoint.x, endPoint.y);
+                  }
+                  gestureStart = null;
+                });
 
                 screen.addEventListener('load', fitScreen);
                 window.addEventListener('resize', fitScreen);

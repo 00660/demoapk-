@@ -288,6 +288,16 @@ class RemoteAccessibilityService : AccessibilityService() {
         val clickable = findClickableAncestor(node) ?: node
         if (clickable.performAction(AccessibilityNodeInfo.ACTION_CLICK)) {
             ControlCenter.clearProjectionApprovalRequest()
+            return
+        }
+
+        val bounds = Rect()
+        node.getBoundsInScreen(bounds)
+        if (bounds.width() > 0 && bounds.height() > 0) {
+            val tapped = tap(bounds.centerX(), bounds.centerY())
+            if (tapped.success) {
+                ControlCenter.clearProjectionApprovalRequest()
+            }
         }
     }
 

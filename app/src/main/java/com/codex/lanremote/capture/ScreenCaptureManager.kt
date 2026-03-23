@@ -3,6 +3,7 @@ package com.codex.lanremote.capture
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
+import android.util.DisplayMetrics
 import android.graphics.PixelFormat
 import android.hardware.display.DisplayManager
 import android.hardware.display.VirtualDisplay
@@ -11,6 +12,7 @@ import android.media.projection.MediaProjection
 import android.media.projection.MediaProjectionManager
 import android.os.Handler
 import android.os.HandlerThread
+import android.view.WindowManager
 import com.codex.lanremote.control.ScreenFrame
 import java.io.ByteArrayOutputStream
 
@@ -67,7 +69,10 @@ object ScreenCaptureManager {
         synchronized(lock) {
             stopProjection()
 
-            val metrics = context.resources.displayMetrics
+            val metrics = DisplayMetrics()
+            val windowManager = context.getSystemService(Context.WINDOW_SERVICE) as WindowManager
+            @Suppress("DEPRECATION")
+            windowManager.defaultDisplay.getRealMetrics(metrics)
             val width = metrics.widthPixels.coerceAtLeast(1)
             val height = metrics.heightPixels.coerceAtLeast(1)
             val density = metrics.densityDpi.coerceAtLeast(1)
