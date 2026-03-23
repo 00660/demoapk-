@@ -53,39 +53,39 @@ object WebUiRenderer {
                   display: flex;
                   align-items: center;
                   justify-content: center;
-                  border-radius: 28px;
+                  border-radius: 20px;
                   background:
                     linear-gradient(145deg, #0f172a 0%, #111827 35%, #020617 100%);
                   box-shadow:
-                    0 12px 28px rgba(0, 0, 0, 0.45),
-                    inset 0 0 0 2px rgba(255, 255, 255, 0.06),
-                    inset 0 0 0 4px rgba(255, 255, 255, 0.03);
+                    0 8px 18px rgba(0, 0, 0, 0.30),
+                    inset 0 0 0 1px rgba(255, 255, 255, 0.06),
+                    inset 0 0 0 2px rgba(255, 255, 255, 0.02);
                 }
                 #speaker {
                   position: absolute;
-                  top: 8px;
+                  top: 4px;
                   left: 50%;
                   transform: translateX(-50%);
-                  width: 72px;
-                  height: 7px;
+                  width: 58px;
+                  height: 5px;
                   border-radius: 999px;
                   background: rgba(0, 0, 0, 0.55);
                   box-shadow: inset 0 1px 2px rgba(255,255,255,0.08);
                 }
                 #camera {
                   position: absolute;
-                  top: 8px;
-                  right: 16px;
-                  width: 7px;
-                  height: 7px;
+                  top: 4px;
+                  right: 10px;
+                  width: 5px;
+                  height: 5px;
                   border-radius: 50%;
                   background: #0b1220;
-                  box-shadow: inset 0 0 0 2px rgba(255,255,255,0.06);
+                  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.06);
                 }
                 #display {
                   position: relative;
                   overflow: hidden;
-                  border-radius: 18px;
+                  border-radius: 14px;
                   background: #000;
                   box-shadow: inset 0 0 0 1px rgba(255,255,255,0.05);
                 }
@@ -100,11 +100,11 @@ object WebUiRenderer {
                 }
                 #homebar {
                   position: absolute;
-                  bottom: 7px;
+                  bottom: 4px;
                   left: 50%;
                   transform: translateX(-50%);
-                  width: 92px;
-                  height: 4px;
+                  width: 72px;
+                  height: 3px;
                   border-radius: 999px;
                   background: rgba(255,255,255,0.22);
                 }
@@ -200,10 +200,10 @@ object WebUiRenderer {
                   stage.style.width = viewportWidth + 'px';
                   stage.style.height = viewportHeight + 'px';
 
-                  const frameSide = 10;
-                  const frameTop = 18;
-                  const frameBottom = 14;
-                  const outerMargin = 4;
+                  const frameSide = 4;
+                  const frameTop = 10;
+                  const frameBottom = 8;
+                  const outerMargin = 1;
                   const sourceRatio = screen.naturalWidth / screen.naturalHeight;
 
                   const maxDisplayWidth = Math.max(1, viewportWidth - outerMargin * 2 - frameSide * 2);
