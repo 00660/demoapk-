@@ -19,6 +19,7 @@ object WebUiRenderer {
                   height: 100%;
                   background: #000;
                   overflow: hidden;
+                  overscroll-behavior: none;
                 }
                 body {
                   display: flex;
@@ -32,6 +33,9 @@ object WebUiRenderer {
                   align-items: center;
                   justify-content: center;
                   background: #000;
+                  width: 100dvw;
+                  height: 100dvh;
+                  overflow: hidden;
                 }
                 #screen {
                   width: auto;
@@ -41,6 +45,7 @@ object WebUiRenderer {
                   background: #000;
                   user-select: none;
                   -webkit-user-drag: none;
+                  touch-action: none;
                 }
                 #tip {
                   position: fixed;
@@ -62,6 +67,7 @@ object WebUiRenderer {
               </div>
               <div id="tip">正在连接实时屏幕...</div>
               <script>
+                const stage = document.getElementById('stage');
                 const screen = document.getElementById('screen');
                 const tip = document.getElementById('tip');
                 let lastProjectionRequestAt = 0;
@@ -122,14 +128,21 @@ object WebUiRenderer {
                   if (!screen.naturalWidth || !screen.naturalHeight) {
                     return;
                   }
-                  const viewportRatio = window.innerWidth / window.innerHeight;
+                  const viewport = window.visualViewport || { width: window.innerWidth, height: window.innerHeight };
+                  const viewportWidth = Math.max(1, Math.round(viewport.width));
+                  const viewportHeight = Math.max(1, Math.round(viewport.height));
+                  stage.style.width = viewportWidth + 'px';
+                  stage.style.height = viewportHeight + 'px';
+                  screen.style.maxWidth = viewportWidth + 'px';
+                  screen.style.maxHeight = viewportHeight + 'px';
+                  const viewportRatio = viewportWidth / viewportHeight;
                   const imageRatio = screen.naturalWidth / screen.naturalHeight;
                   if (imageRatio > viewportRatio) {
-                    screen.style.width = '100vw';
+                    screen.style.width = viewportWidth + 'px';
                     screen.style.height = 'auto';
                   } else {
                     screen.style.width = 'auto';
-                    screen.style.height = '100vh';
+                    screen.style.height = viewportHeight + 'px';
                   }
                 }
 
@@ -179,6 +192,10 @@ object WebUiRenderer {
 
                 screen.addEventListener('load', fitScreen);
                 window.addEventListener('resize', fitScreen);
+                if (window.visualViewport) {
+                  window.visualViewport.addEventListener('resize', fitScreen);
+                  window.visualViewport.addEventListener('scroll', fitScreen);
+                }
                 setInterval(loop, 350);
                 loop();
               </script>
