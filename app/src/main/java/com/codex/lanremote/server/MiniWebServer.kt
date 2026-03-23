@@ -8,6 +8,7 @@ import org.json.JSONObject
 import java.io.ByteArrayInputStream
 import java.io.PipedInputStream
 import java.io.PipedOutputStream
+import java.nio.ByteBuffer
 
 class MiniWebServer(
     private val appContext: Context,
@@ -37,6 +38,7 @@ class MiniWebServer(
                 "/nodes" -> jsonResponse(ControlCenter.nodeTreeJson())
                 "/apps" -> jsonResponse(ControlCenter.appsJson(appContext))
                 "/screen.jpg" -> imageResponse()
+                "/stream.bin" -> binaryFrameStreamResponse()
                 "/stream.mjpeg" -> mjpegResponse()
                 "/projection/request" -> jsonResponse(ControlCenter.requestProjectionPermission(appContext).toJson())
                 "/action" -> jsonResponse(ControlCenter.performGlobalAction(params["name"].orEmpty()).toJson())
@@ -145,6 +147,38 @@ class MiniWebServer(
         return newChunkedResponse(
             Response.Status.OK,
             "multipart/x-mixed-replace; boundary=frame",
+            input,
+        ).apply {
+            addHeader("Cache-Control", "no-store")
+        }
+    }
+
+    private fun binaryFrameStreamResponse(): Response {
+        val input = PipedInputStream(1024 * 1024)
+        val output = PipedOutputStream(input)
+
+        Thread {
+            var lastTimestamp = 0L
+            try {
+                while (true) {
+                    val frame = ControlCenter.captureScreenFrame(forceRefresh = false)
+                    if (frame != null && frame.timestampMs != lastTimestamp) {
+                        lastTimestamp = frame.timestampMs
+                        output.write(ByteBuffer.allocate(4).putInt(frame.bytes.size).array())
+                        output.write(frame.bytes)
+                        output.flush()
+                    }
+                    Thread.sleep(15)
+                }
+            } catch (_: Exception) {
+            } finally {
+                runCatching { output.close() }
+            }
+        }.start()
+
+        return newChunkedResponse(
+            Response.Status.OK,
+            "application/octet-stream",
             input,
         ).apply {
             addHeader("Cache-Control", "no-store")

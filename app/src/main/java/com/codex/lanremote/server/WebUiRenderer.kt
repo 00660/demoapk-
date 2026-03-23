@@ -41,71 +41,15 @@ object WebUiRenderer {
                   display: flex;
                   align-items: center;
                   justify-content: center;
-                  background:
-                    radial-gradient(circle at top, rgba(59,130,246,0.28), transparent 30%),
-                    linear-gradient(180deg, #020617 0%, #000 100%);
+                  background: #000;
                   width: 100dvw;
                   height: 100dvh;
                   overflow: hidden;
                 }
-                #phone {
-                  position: relative;
-                  display: flex;
-                  align-items: center;
-                  justify-content: center;
-                  border-radius: 14px;
-                  background:
-                    linear-gradient(145deg, #0f172a 0%, #111827 35%, #020617 100%);
-                  box-shadow:
-                    0 4px 10px rgba(0, 0, 0, 0.22),
-                    inset 0 0 0 1px rgba(255, 255, 255, 0.04);
-                }
-                #speaker {
-                  position: absolute;
-                  top: 2px;
-                  left: 50%;
-                  transform: translateX(-50%);
-                  width: 46px;
-                  height: 4px;
-                  border-radius: 999px;
-                  background: rgba(0, 0, 0, 0.55);
-                  box-shadow: inset 0 1px 2px rgba(255,255,255,0.08);
-                }
-                #camera {
-                  position: absolute;
-                  top: 2px;
-                  right: 6px;
-                  width: 4px;
-                  height: 4px;
-                  border-radius: 50%;
-                  background: #0b1220;
-                  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.06);
-                }
-                #display {
-                  position: relative;
-                  overflow: hidden;
-                  border-radius: 12px;
-                  background: #000;
-                  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.05);
-                }
                 #screen {
-                  width: 100%;
-                  height: 100%;
+                  display: block;
                   background: #000;
-                  user-select: none;
-                  -webkit-user-drag: none;
                   touch-action: none;
-                  object-fit: fill;
-                }
-                #homebar {
-                  position: absolute;
-                  bottom: 2px;
-                  left: 50%;
-                  transform: translateX(-50%);
-                  width: 54px;
-                  height: 2px;
-                  border-radius: 999px;
-                  background: rgba(255,255,255,0.22);
                 }
                 #tip {
                   position: fixed;
@@ -123,24 +67,20 @@ object WebUiRenderer {
             </head>
             <body>
               <div id="stage">
-                <div id="phone">
-                  <div id="speaker"></div>
-                  <div id="camera"></div>
-                  <div id="display">
-                    <img id="screen" src="/stream.mjpeg" alt="实时屏幕">
-                  </div>
-                  <div id="homebar"></div>
-                </div>
+                <canvas id="screen"></canvas>
               </div>
               <div id="tip">正在连接实时屏幕...</div>
               <script>
                 const stage = document.getElementById('stage');
-                const phone = document.getElementById('phone');
-                const display = document.getElementById('display');
                 const screen = document.getElementById('screen');
+                const ctx = screen.getContext('2d', { alpha: false, desynchronized: true });
                 const tip = document.getElementById('tip');
                 let lastProjectionRequestAt = 0;
                 let gestureStart = null;
+                let sourceWidth = 0;
+                let sourceHeight = 0;
+                let drawRect = null;
+                let reading = false;
 
                 async function getStatus() {
                   const response = await fetch('/status');
@@ -180,17 +120,16 @@ object WebUiRenderer {
                 }
 
                 function mapPoint(clientX, clientY) {
-                  if (!screen.naturalWidth || !screen.naturalHeight) {
+                  if (!sourceWidth || !sourceHeight || !drawRect) {
                     return null;
                   }
-                  const rect = display.getBoundingClientRect();
-                  const x = Math.round((clientX - rect.left) * screen.naturalWidth / rect.width);
-                  const y = Math.round((clientY - rect.top) * screen.naturalHeight / rect.height);
+                  const x = Math.round((clientX - drawRect.left) * sourceWidth / drawRect.width);
+                  const y = Math.round((clientY - drawRect.top) * sourceHeight / drawRect.height);
                   return { x: x, y: y };
                 }
 
-                function fitScreen() {
-                  if (!screen.naturalWidth || !screen.naturalHeight) {
+                function fitCanvas() {
+                  if (!sourceWidth || !sourceHeight) {
                     return;
                   }
                   const viewport = window.visualViewport || { width: window.innerWidth, height: window.innerHeight };
@@ -198,34 +137,79 @@ object WebUiRenderer {
                   const viewportHeight = Math.max(1, Math.round(viewport.height));
                   stage.style.width = viewportWidth + 'px';
                   stage.style.height = viewportHeight + 'px';
+                  screen.width = viewportWidth;
+                  screen.height = viewportHeight;
+                  screen.style.width = viewportWidth + 'px';
+                  screen.style.height = viewportHeight + 'px';
 
-                  const frameSide = 1;
-                  const frameTop = 6;
-                  const frameBottom = 4;
-                  const outerMargin = 0;
-                  const sourceRatio = screen.naturalWidth / screen.naturalHeight;
-
-                  const maxDisplayWidth = Math.max(1, viewportWidth - outerMargin * 2 - frameSide * 2);
-                  const maxDisplayHeight = Math.max(1, viewportHeight - outerMargin * 2 - frameTop - frameBottom);
-
-                  let displayWidth = maxDisplayWidth;
-                  let displayHeight = Math.round(displayWidth / sourceRatio);
-                  if (displayHeight > maxDisplayHeight) {
-                    displayHeight = maxDisplayHeight;
-                    displayWidth = Math.round(displayHeight * sourceRatio);
+                  const sourceRatio = sourceWidth / sourceHeight;
+                  const viewportRatio = viewportWidth / viewportHeight;
+                  let drawWidth = viewportWidth;
+                  let drawHeight = Math.round(drawWidth / sourceRatio);
+                  if (drawHeight > viewportHeight) {
+                    drawHeight = viewportHeight;
+                    drawWidth = Math.round(drawHeight * sourceRatio);
                   }
+                  const left = Math.floor((viewportWidth - drawWidth) / 2);
+                  const top = Math.floor((viewportHeight - drawHeight) / 2);
+                  drawRect = { left: left, top: top, width: drawWidth, height: drawHeight };
+                }
 
-                  phone.style.width = (displayWidth + frameSide * 2) + 'px';
-                  phone.style.height = (displayHeight + frameTop + frameBottom) + 'px';
-                  phone.style.paddingLeft = frameSide + 'px';
-                  phone.style.paddingRight = frameSide + 'px';
-                  phone.style.paddingTop = frameTop + 'px';
-                  phone.style.paddingBottom = frameBottom + 'px';
+                async function drawFrame(bytes) {
+                  const blob = new Blob([bytes], { type: 'image/jpeg' });
+                  const bitmap = await createImageBitmap(blob);
+                  sourceWidth = bitmap.width;
+                  sourceHeight = bitmap.height;
+                  fitCanvas();
+                  if (drawRect) {
+                    ctx.fillStyle = '#000';
+                    ctx.fillRect(0, 0, screen.width, screen.height);
+                    ctx.drawImage(bitmap, drawRect.left, drawRect.top, drawRect.width, drawRect.height);
+                  }
+                  bitmap.close();
+                }
 
-                  display.style.width = displayWidth + 'px';
-                  display.style.height = displayHeight + 'px';
-                  screen.style.width = displayWidth + 'px';
-                  screen.style.height = displayHeight + 'px';
+                async function openFrameStream() {
+                  if (reading) {
+                    return;
+                  }
+                  reading = true;
+                  try {
+                    const response = await fetch('/stream.bin?ts=' + Date.now(), { cache: 'no-store' });
+                    const reader = response.body.getReader();
+                    let buffer = new Uint8Array(0);
+                    while (true) {
+                      const result = await reader.read();
+                      if (result.done) {
+                        break;
+                      }
+                    const incoming = result.value;
+                    const merged = new Uint8Array(buffer.length + incoming.length);
+                    merged.set(buffer, 0);
+                    merged.set(incoming, buffer.length);
+                    buffer = merged;
+
+                    let latestFrameBytes = null;
+                    while (buffer.length >= 4) {
+                      const view = new DataView(buffer.buffer, buffer.byteOffset, buffer.byteLength);
+                      const frameLength = view.getInt32(0);
+                      if (buffer.length < 4 + frameLength) {
+                        break;
+                      }
+                      latestFrameBytes = buffer.slice(4, 4 + frameLength);
+                      buffer = buffer.slice(4 + frameLength);
+                    }
+                    if (latestFrameBytes) {
+                      await drawFrame(latestFrameBytes);
+                    }
+                  }
+                } catch (e) {
+                    tip.style.display = 'block';
+                    tip.textContent = '实时画面连接失败';
+                  } finally {
+                    reading = false;
+                    setTimeout(openFrameStream, 300);
+                  }
                 }
 
                 async function loop() {
@@ -243,15 +227,15 @@ object WebUiRenderer {
                     await requestProjectionIfNeeded(status);
                   } catch (e) {
                     tip.style.display = 'block';
-                    tip.textContent = '实时屏幕连接失败';
+                    tip.textContent = '状态同步失败';
                   }
                 }
 
-                display.addEventListener('pointerdown', function (event) {
+                screen.addEventListener('pointerdown', function (event) {
                   gestureStart = mapPoint(event.clientX, event.clientY);
                 });
 
-                display.addEventListener('pointerup', async function (event) {
+                screen.addEventListener('pointerup', async function (event) {
                   if (!gestureStart) {
                     return;
                   }
@@ -269,15 +253,14 @@ object WebUiRenderer {
                     await sendSwipe(gestureStart.x, gestureStart.y, endPoint.x, endPoint.y);
                   }
                   gestureStart = null;
-                  setTimeout(function () { screen.src = '/stream.mjpeg?ts=' + Date.now(); }, 80);
                 });
 
-                screen.addEventListener('load', fitScreen);
-                window.addEventListener('resize', fitScreen);
+                window.addEventListener('resize', fitCanvas);
                 if (window.visualViewport) {
-                  window.visualViewport.addEventListener('resize', fitScreen);
-                  window.visualViewport.addEventListener('scroll', fitScreen);
+                  window.visualViewport.addEventListener('resize', fitCanvas);
+                  window.visualViewport.addEventListener('scroll', fitCanvas);
                 }
+                openFrameStream();
                 setInterval(loop, 350);
                 loop();
               </script>
