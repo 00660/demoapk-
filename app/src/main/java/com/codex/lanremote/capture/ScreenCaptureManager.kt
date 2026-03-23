@@ -69,13 +69,23 @@ object ScreenCaptureManager {
         synchronized(lock) {
             stopProjection()
 
-            val metrics = DisplayMetrics()
+            val realMetrics = DisplayMetrics()
+            val appMetrics = DisplayMetrics()
             val windowManager = context.getSystemService(Context.WINDOW_SERVICE) as WindowManager
             @Suppress("DEPRECATION")
-            windowManager.defaultDisplay.getRealMetrics(metrics)
-            val width = metrics.widthPixels.coerceAtLeast(1)
-            val height = metrics.heightPixels.coerceAtLeast(1)
-            val density = metrics.densityDpi.coerceAtLeast(1)
+            windowManager.defaultDisplay.getRealMetrics(realMetrics)
+            @Suppress("DEPRECATION")
+            windowManager.defaultDisplay.getMetrics(appMetrics)
+
+            val width = realMetrics.widthPixels.coerceAtLeast(1)
+            val realHeight = realMetrics.heightPixels.coerceAtLeast(1)
+            val appHeight = appMetrics.heightPixels.coerceAtLeast(1)
+            val density = realMetrics.densityDpi.coerceAtLeast(1)
+
+            val navigationBarHeight = resolveNavigationBarHeight(context)
+            val bottomGap = (realHeight - appHeight).coerceAtLeast(0)
+            val extraBottom = maxOf(navigationBarHeight, bottomGap)
+            val height = (realHeight + extraBottom).coerceAtLeast(realHeight)
 
             val thread = HandlerThread("screen-capture-worker").also { it.start() }
             val handler = Handler(thread.looper)
@@ -141,6 +151,14 @@ object ScreenCaptureManager {
             virtualDisplay = display
             awaitingApproval = false
         }
+    }
+
+    private fun resolveNavigationBarHeight(context: Context): Int {
+        val resourceId = context.resources.getIdentifier("navigation_bar_height", "dimen", "android")
+        if (resourceId == 0) {
+            return 0
+        }
+        return runCatching { context.resources.getDimensionPixelSize(resourceId) }.getOrDefault(0)
     }
 
     fun stopProjection() {
