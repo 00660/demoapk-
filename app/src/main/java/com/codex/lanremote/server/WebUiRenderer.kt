@@ -53,31 +53,31 @@ object WebUiRenderer {
                   display: flex;
                   align-items: center;
                   justify-content: center;
-                  border-radius: 42px;
+                  border-radius: 28px;
                   background:
                     linear-gradient(145deg, #0f172a 0%, #111827 35%, #020617 100%);
                   box-shadow:
-                    0 20px 50px rgba(0, 0, 0, 0.58),
+                    0 12px 28px rgba(0, 0, 0, 0.45),
                     inset 0 0 0 2px rgba(255, 255, 255, 0.06),
-                    inset 0 0 0 10px rgba(255, 255, 255, 0.03);
+                    inset 0 0 0 4px rgba(255, 255, 255, 0.03);
                 }
                 #speaker {
                   position: absolute;
-                  top: 16px;
+                  top: 8px;
                   left: 50%;
                   transform: translateX(-50%);
-                  width: 92px;
-                  height: 10px;
+                  width: 72px;
+                  height: 7px;
                   border-radius: 999px;
                   background: rgba(0, 0, 0, 0.55);
                   box-shadow: inset 0 1px 2px rgba(255,255,255,0.08);
                 }
                 #camera {
                   position: absolute;
-                  top: 16px;
-                  right: 26px;
-                  width: 10px;
-                  height: 10px;
+                  top: 8px;
+                  right: 16px;
+                  width: 7px;
+                  height: 7px;
                   border-radius: 50%;
                   background: #0b1220;
                   box-shadow: inset 0 0 0 2px rgba(255,255,255,0.06);
@@ -85,7 +85,7 @@ object WebUiRenderer {
                 #display {
                   position: relative;
                   overflow: hidden;
-                  border-radius: 26px;
+                  border-radius: 18px;
                   background: #000;
                   box-shadow: inset 0 0 0 1px rgba(255,255,255,0.05);
                 }
@@ -100,11 +100,11 @@ object WebUiRenderer {
                 }
                 #homebar {
                   position: absolute;
-                  bottom: 12px;
+                  bottom: 7px;
                   left: 50%;
                   transform: translateX(-50%);
-                  width: 110px;
-                  height: 5px;
+                  width: 92px;
+                  height: 4px;
                   border-radius: 999px;
                   background: rgba(255,255,255,0.22);
                 }
@@ -200,10 +200,10 @@ object WebUiRenderer {
                   stage.style.width = viewportWidth + 'px';
                   stage.style.height = viewportHeight + 'px';
 
-                  const frameSide = 26;
-                  const frameTop = 34;
-                  const frameBottom = 28;
-                  const outerMargin = 14;
+                  const frameSide = 10;
+                  const frameTop = 18;
+                  const frameBottom = 14;
+                  const outerMargin = 4;
                   const sourceRatio = screen.naturalWidth / screen.naturalHeight;
 
                   const maxDisplayWidth = Math.max(1, viewportWidth - outerMargin * 2 - frameSide * 2);
