@@ -8,7 +8,7 @@ object StreamModeStore {
 
     fun get(context: Context): StreamMode {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-        return StreamMode.fromWireValue(prefs.getString(KEY_MODE, StreamMode.LOW_LATENCY_H264.wireValue))
+        return StreamMode.fromWireValue(prefs.getString(KEY_MODE, StreamMode.BROWSER_MJPEG.wireValue))
     }
 
     fun set(context: Context, mode: StreamMode) {

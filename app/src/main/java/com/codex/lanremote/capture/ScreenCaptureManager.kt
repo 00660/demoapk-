@@ -51,7 +51,7 @@ object ScreenCaptureManager {
     private var awaitingApproval: Boolean = false
 
     @Volatile
-    private var currentMode: StreamMode = StreamMode.LOW_LATENCY_H264
+    private var currentMode: StreamMode = StreamMode.BROWSER_MJPEG
 
     @Volatile
     private var h264Server: H264TcpServer? = null
