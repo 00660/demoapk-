@@ -7,6 +7,8 @@ import android.os.Build
 import com.codex.lanremote.accessibility.RemoteAccessibilityService
 import com.codex.lanremote.capture.ScreenCaptureManager
 import com.codex.lanremote.server.MiniWebServer
+import com.codex.lanremote.stream.StreamMode
+import com.codex.lanremote.stream.StreamModeStore
 import com.codex.lanremote.util.NetworkUtils
 import org.json.JSONArray
 import org.json.JSONObject
@@ -59,6 +61,7 @@ object ControlCenter {
 
     fun startServer(context: Context, port: Int = DEFAULT_PORT): ControlResult {
         synchronized(lock) {
+            ScreenCaptureManager.setMode(context.applicationContext, StreamModeStore.get(context.applicationContext))
             if (webServer != null) {
                 return ControlResult.success("网页服务已经在运行", mapOf("baseUrl" to baseUrl(context)))
             }
@@ -88,6 +91,8 @@ object ControlCenter {
     }
 
     fun status(context: Context): JSONObject {
+        val mode = StreamModeStore.get(context.applicationContext)
+        ScreenCaptureManager.setMode(context.applicationContext, mode)
         val nodes = accessibilityRef?.get()?.dumpNodes().orEmpty()
         val frame = lastScreenFrame ?: ScreenCaptureManager.latestFrame()
         return JSONObject().apply {
@@ -103,8 +108,13 @@ object ControlCenter {
             put("screenWidth", frame?.width ?: 0)
             put("screenHeight", frame?.height ?: 0)
             put("screenTimestampMs", frame?.timestampMs ?: 0L)
+            put("streamMode", mode.wireValue)
             put("projectionActive", ScreenCaptureManager.isProjectionActive())
             put("projectionAwaitingApproval", ScreenCaptureManager.isAwaitingApproval())
+            put("browserStreamUrl", baseUrl(context) + "stream.mjpeg")
+            put("lowLatencyTcpHost", NetworkUtils.findLanIpv4Address() ?: "127.0.0.1")
+            put("lowLatencyTcpPort", ScreenCaptureManager.tcpPort())
+            put("lowLatencyClientCount", ScreenCaptureManager.tcpClientCount())
         }
     }
 
@@ -215,6 +225,7 @@ object ControlCenter {
 
     fun requestProjectionPermission(context: Context): ControlResult {
         return try {
+            ScreenCaptureManager.setMode(context.applicationContext, StreamModeStore.get(context.applicationContext))
             ScreenCaptureManager.requestPermission(context.applicationContext)
             ControlResult.success("录屏授权请求已发起")
         } catch (exc: Exception) {
@@ -228,6 +239,20 @@ object ControlCenter {
 
     fun isProjectionApprovalRequested(): Boolean {
         return ScreenCaptureManager.isAwaitingApproval()
+    }
+
+    fun currentMode(context: Context): StreamMode {
+        return StreamModeStore.get(context.applicationContext)
+    }
+
+    fun setStreamMode(context: Context, mode: StreamMode): ControlResult {
+        return try {
+            StreamModeStore.set(context.applicationContext, mode)
+            ScreenCaptureManager.setMode(context.applicationContext, mode)
+            ControlResult.success("模式已切换为 ${mode.wireValue}")
+        } catch (exc: Exception) {
+            ControlResult.failure("切换模式失败：${exc.message}")
+        }
     }
 }
 

@@ -7,6 +7,8 @@
     <string name="request_projection_permission">申请录屏授权</string>
     <string name="open_wifi_settings">打开无线网络设置</string>
     <string name="open_battery_settings">打开电池优化设置</string>
+    <string name="browser_mode">切换到浏览器模式</string>
+    <string name="low_latency_mode">切换到低延迟模式</string>
     <string name="start_server">启动网页服务</string>
     <string name="stop_server">停止网页服务</string>
     <string name="open_browser">打开浏览器</string>

@@ -5,10 +5,10 @@ import android.net.Uri
 import android.os.Bundle
 import android.provider.Settings
 import androidx.appcompat.app.AppCompatActivity
-import com.codex.lanremote.capture.ScreenCapturePermissionActivity
 import com.codex.lanremote.control.ControlCenter
 import com.codex.lanremote.databinding.ActivityMainBinding
 import com.codex.lanremote.server.WebControlService
+import com.codex.lanremote.stream.StreamMode
 
 class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
@@ -23,7 +23,8 @@ class MainActivity : AppCompatActivity() {
         }
 
         binding.requestProjectionButton.setOnClickListener {
-            startActivity(Intent(this, ScreenCapturePermissionActivity::class.java))
+            ControlCenter.requestProjectionPermission(this)
+            renderStatus()
         }
 
         binding.openWifiButton.setOnClickListener {
@@ -32,6 +33,16 @@ class MainActivity : AppCompatActivity() {
 
         binding.openBatteryButton.setOnClickListener {
             startActivity(Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS))
+        }
+
+        binding.browserModeButton.setOnClickListener {
+            ControlCenter.setStreamMode(this, StreamMode.BROWSER_MJPEG)
+            renderStatus()
+        }
+
+        binding.lowLatencyModeButton.setOnClickListener {
+            ControlCenter.setStreamMode(this, StreamMode.LOW_LATENCY_H264)
+            renderStatus()
         }
 
         binding.startServerButton.setOnClickListener {
@@ -70,15 +81,20 @@ class MainActivity : AppCompatActivity() {
             appendLine("录屏已开启：${status.optBoolean("projectionActive")}")
             appendLine("等待录屏授权：${status.optBoolean("projectionAwaitingApproval")}")
             appendLine("实时画面尺寸：${status.optInt("screenWidth")} x ${status.optInt("screenHeight")}")
+            appendLine("当前模式：${status.optString("streamMode")}")
+            appendLine("浏览器流：${status.optString("browserStreamUrl")}")
+            appendLine("低延迟 TCP：${status.optString("lowLatencyTcpHost")}:${status.optInt("lowLatencyTcpPort")}")
+            appendLine("低延迟客户端数：${status.optInt("lowLatencyClientCount")}")
         }
 
         binding.instructionsText.text = buildString {
             appendLine("1. 先启用辅助功能。")
-            appendLine("2. 再点一次“申请录屏授权”。")
-            appendLine("3. 最后启动网页服务，用别的设备打开上面的局域网地址。")
+            appendLine("2. 选择一种流模式。")
+            appendLine("3. 再点一次“申请录屏授权”。")
+            appendLine("4. 最后启动网页服务或低延迟客户端。")
             appendLine()
-            appendLine("安卓 8.1 的实时屏幕必须走系统录屏授权。")
-            appendLine("如果屏幕坏了，但辅助功能已经启用，系统授权弹窗有机会自动帮你点掉。")
+            appendLine("浏览器模式：网页里直接看实时画面。")
+            appendLine("低延迟模式：输出 H.264 TCP 流，更适合自定义客户端。")
         }
     }
 }

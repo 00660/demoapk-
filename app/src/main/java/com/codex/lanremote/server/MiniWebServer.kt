@@ -2,9 +2,12 @@ package com.codex.lanremote.server
 
 import android.content.Context
 import com.codex.lanremote.control.ControlCenter
+import com.codex.lanremote.stream.StreamMode
 import fi.iki.elonen.NanoHTTPD
 import org.json.JSONObject
 import java.io.ByteArrayInputStream
+import java.io.PipedInputStream
+import java.io.PipedOutputStream
 
 class MiniWebServer(
     private val appContext: Context,
@@ -24,9 +27,17 @@ class MiniWebServer(
             when (session.uri) {
                 "/" -> htmlResponse(WebUiRenderer.render(appContext))
                 "/status" -> jsonResponse(ControlCenter.status(appContext))
+                "/mode/get" -> jsonResponse(JSONObject().put("mode", ControlCenter.currentMode(appContext).wireValue))
+                "/mode/set" -> jsonResponse(
+                    ControlCenter.setStreamMode(
+                        appContext,
+                        StreamMode.fromWireValue(params["value"]),
+                    ).toJson(),
+                )
                 "/nodes" -> jsonResponse(ControlCenter.nodeTreeJson())
                 "/apps" -> jsonResponse(ControlCenter.appsJson(appContext))
                 "/screen.jpg" -> imageResponse()
+                "/stream.mjpeg" -> mjpegResponse()
                 "/projection/request" -> jsonResponse(ControlCenter.requestProjectionPermission(appContext).toJson())
                 "/action" -> jsonResponse(ControlCenter.performGlobalAction(params["name"].orEmpty()).toJson())
                 "/gesture/tap" -> jsonResponse(
@@ -96,6 +107,45 @@ class MiniWebServer(
             frame.mimeType,
             ByteArrayInputStream(frame.bytes),
             frame.bytes.size.toLong(),
+        ).apply {
+            addHeader("Cache-Control", "no-store")
+        }
+    }
+
+    private fun mjpegResponse(): Response {
+        val input = PipedInputStream(1024 * 1024)
+        val output = PipedOutputStream(input)
+
+        Thread {
+            var lastTimestamp = 0L
+            try {
+                while (true) {
+                    val frame = ControlCenter.captureScreenFrame(forceRefresh = false)
+                    if (frame != null && frame.timestampMs != lastTimestamp) {
+                        lastTimestamp = frame.timestampMs
+                        val header = buildString {
+                            append("--frame\r\n")
+                            append("Content-Type: ${frame.mimeType}\r\n")
+                            append("Content-Length: ${frame.bytes.size}\r\n")
+                            append("\r\n")
+                        }.toByteArray(Charsets.UTF_8)
+                        output.write(header)
+                        output.write(frame.bytes)
+                        output.write("\r\n".toByteArray(Charsets.UTF_8))
+                        output.flush()
+                    }
+                    Thread.sleep(30)
+                }
+            } catch (_: Exception) {
+            } finally {
+                runCatching { output.close() }
+            }
+        }.start()
+
+        return newChunkedResponse(
+            Response.Status.OK,
+            "multipart/x-mixed-replace; boundary=frame",
+            input,
         ).apply {
             addHeader("Cache-Control", "no-store")
         }

@@ -1,9 +1,18 @@
 package com.codex.lanremote.server
 
 import android.content.Context
+import com.codex.lanremote.control.ControlCenter
+import com.codex.lanremote.stream.StreamMode
 
 object WebUiRenderer {
     fun render(context: Context): String {
+        return when (ControlCenter.currentMode(context)) {
+            StreamMode.BROWSER_MJPEG -> renderBrowserPage()
+            StreamMode.LOW_LATENCY_H264 -> renderLowLatencyPage(context)
+        }
+    }
+
+    private fun renderBrowserPage(): String {
         return """
             <!doctype html>
             <html lang="zh-CN">
@@ -63,7 +72,7 @@ object WebUiRenderer {
             </head>
             <body>
               <div id="stage">
-                <img id="screen" alt="实时屏幕">
+                <img id="screen" src="/stream.mjpeg" alt="实时屏幕">
               </div>
               <div id="tip">正在连接实时屏幕...</div>
               <script>
@@ -93,10 +102,6 @@ object WebUiRenderer {
                   } catch (e) {
                     tip.textContent = '录屏授权请求失败';
                   }
-                }
-
-                async function refreshScreen() {
-                  screen.src = '/screen.jpg?ts=' + Date.now();
                 }
 
                 async function sendTap(x, y) {
@@ -159,7 +164,6 @@ object WebUiRenderer {
                       tip.textContent = '正在发起录屏授权...';
                     }
                     await requestProjectionIfNeeded(status);
-                    await refreshScreen();
                   } catch (e) {
                     tip.style.display = 'block';
                     tip.textContent = '实时屏幕连接失败';
@@ -188,6 +192,7 @@ object WebUiRenderer {
                     await sendSwipe(gestureStart.x, gestureStart.y, endPoint.x, endPoint.y);
                   }
                   gestureStart = null;
+                  setTimeout(function () { screen.src = '/stream.mjpeg?ts=' + Date.now(); }, 80);
                 });
 
                 screen.addEventListener('load', fitScreen);
@@ -199,6 +204,57 @@ object WebUiRenderer {
                 setInterval(loop, 350);
                 loop();
               </script>
+            </body>
+            </html>
+        """.trimIndent()
+    }
+
+    private fun renderLowLatencyPage(context: Context): String {
+        val status = ControlCenter.status(context)
+        val host = status.optString("lowLatencyTcpHost")
+        val port = status.optInt("lowLatencyTcpPort")
+        return """
+            <!doctype html>
+            <html lang="zh-CN">
+            <head>
+              <meta charset="utf-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1">
+              <title>低延迟模式</title>
+              <style>
+                body {
+                  margin: 0;
+                  padding: 24px;
+                  background: #020617;
+                  color: #f8fafc;
+                  font: 16px/1.7 "Microsoft YaHei", "PingFang SC", sans-serif;
+                }
+                .card {
+                  max-width: 760px;
+                  margin: 0 auto;
+                  background: #111827;
+                  border: 1px solid #1f2937;
+                  border-radius: 16px;
+                  padding: 20px;
+                }
+                code, pre {
+                  background: #000;
+                  border-radius: 12px;
+                  padding: 12px;
+                  display: block;
+                  overflow: auto;
+                }
+              </style>
+            </head>
+            <body>
+              <div class="card">
+                <h1>低延迟模式</h1>
+                <p>当前不是浏览器实时画面模式，而是 H.264/TCP 模式。</p>
+                <p>连接地址：</p>
+                <code>tcp://$host:$port</code>
+                <p>示例：</p>
+                <pre>ffplay -fflags nobuffer -flags low_delay -framedrop -strict experimental -f h264 tcp://$host:$port</pre>
+                <p>如果你要回到浏览器看屏幕，请在 App 里切回“浏览器模式”。</p>
+              </div>
             </body>
             </html>
         """.trimIndent()

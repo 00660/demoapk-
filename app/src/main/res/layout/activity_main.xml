@@ -59,6 +59,20 @@
             android:text="@string/open_battery_settings" />
 
         <Button
+            android:id="@+id/browserModeButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="@string/browser_mode" />
+
+        <Button
+            android:id="@+id/lowLatencyModeButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="@string/low_latency_mode" />
+
+        <Button
             android:id="@+id/startServerButton"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
