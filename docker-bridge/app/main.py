@@ -219,10 +219,11 @@ def page_html() -> str:
     const tip = document.getElementById('tip');
     const modeBrowser = document.getElementById('modeBrowser');
     const modeLow = document.getElementById('modeLow');
-    let mode = 'browser_mjpeg';
+    let mode = 'low_latency_h264';
     let player = null;
     let pointerStart = null;
     let lastProjectionRequestAt = 0;
+    let lowLatencyPreferredApplied = false;
 
     async function api(path, method = 'POST') {{
       const response = await fetch(path, {{ method }});
@@ -375,7 +376,13 @@ def page_html() -> str:
     async function refreshState() {{
       try {{
         const status = await fetchStatus();
-        mode = status.streamMode || mode;
+        if (!lowLatencyPreferredApplied && status.streamMode !== 'low_latency_h264') {{
+          lowLatencyPreferredApplied = true;
+          await api('/api/phone/mode/low_latency_h264');
+          mode = 'low_latency_h264';
+        }} else {{
+          mode = status.streamMode || mode;
+        }}
         renderMode();
         if (status.projectionActive) {{
           tip.textContent = '';
