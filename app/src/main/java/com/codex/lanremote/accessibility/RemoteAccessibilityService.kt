@@ -9,7 +9,9 @@ import android.graphics.Path
 import android.graphics.Rect
 import android.os.Build
 import android.os.Bundle
+import android.util.DisplayMetrics
 import android.view.Display
+import android.view.WindowManager
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
 import com.codex.lanremote.control.ControlCenter
@@ -259,15 +261,16 @@ class RemoteAccessibilityService : AccessibilityService() {
         }
 
         val root = rootInActiveWindow ?: return
-        val packageName = root.packageName?.toString().orEmpty()
-        if (
-            !packageName.contains("systemui", ignoreCase = true) &&
-            !packageName.contains("miui", ignoreCase = true) &&
-            !packageName.contains("securitycenter", ignoreCase = true) &&
-            packageName != "android"
-        ) {
-            return
-        }
+        val hasProjectionBody = containsAnyText(
+            root,
+            listOf(
+                "将开始截取您的屏幕上显示的所有内容",
+                "将开始捕获您屏幕上显示的所有内容",
+                "开始截取您的屏幕",
+                "屏幕上显示的所有内容",
+                "capture everything that's displayed",
+            ),
+        )
 
         val node = findNodeByTexts(
             root,
@@ -283,18 +286,33 @@ class RemoteAccessibilityService : AccessibilityService() {
                 "Allow",
                 "Continue",
             ),
-        ) ?: return
+        )
 
-        val clickable = findClickableAncestor(node) ?: node
-        if (clickable.performAction(AccessibilityNodeInfo.ACTION_CLICK)) {
-            ControlCenter.clearProjectionApprovalRequest()
-            return
+        if (node != null) {
+            val clickable = findClickableAncestor(node) ?: node
+            if (clickable.performAction(AccessibilityNodeInfo.ACTION_CLICK)) {
+                ControlCenter.clearProjectionApprovalRequest()
+                return
+            }
+
+            val bounds = Rect()
+            node.getBoundsInScreen(bounds)
+            if (bounds.width() > 0 && bounds.height() > 0) {
+                val tapped = tap(bounds.centerX(), bounds.centerY())
+                if (tapped.success) {
+                    ControlCenter.clearProjectionApprovalRequest()
+                    return
+                }
+            }
         }
 
-        val bounds = Rect()
-        node.getBoundsInScreen(bounds)
-        if (bounds.width() > 0 && bounds.height() > 0) {
-            val tapped = tap(bounds.centerX(), bounds.centerY())
+        if (hasProjectionBody) {
+            val metrics = DisplayMetrics()
+            @Suppress("DEPRECATION")
+            (getSystemService(WINDOW_SERVICE) as WindowManager).defaultDisplay.getRealMetrics(metrics)
+            val fallbackX = (metrics.widthPixels * 0.79f).toInt()
+            val fallbackY = (metrics.heightPixels * 0.88f).toInt()
+            val tapped = tap(fallbackX, fallbackY)
             if (tapped.success) {
                 ControlCenter.clearProjectionApprovalRequest()
             }
@@ -316,5 +334,21 @@ class RemoteAccessibilityService : AccessibilityService() {
             }
         }
         return null
+    }
+
+    private fun containsAnyText(node: AccessibilityNodeInfo, targets: List<String>): Boolean {
+        val text = node.text?.toString().orEmpty()
+        val desc = node.contentDescription?.toString().orEmpty()
+        if (targets.any { target -> text.contains(target, ignoreCase = true) || desc.contains(target, ignoreCase = true) }) {
+            return true
+        }
+
+        for (index in 0 until node.childCount) {
+            val child = node.getChild(index) ?: continue
+            if (containsAnyText(child, targets)) {
+                return true
+            }
+        }
+        return false
     }
 }
